@@ -1,0 +1,22 @@
+﻿[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robotframework-okw-env-docker"
+version = "0.1.0"
+description = "Robot Framework library providing OKW environment provisioning with Docker."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "robotframework>=6.0"
+]
+
+[project.urls]
+Repository = "http://192.168.1.130:3000/Hrabovszki1023/robotframework-okw-env-docker"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
