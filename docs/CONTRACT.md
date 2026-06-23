@@ -1,50 +1,82 @@
-# OKW Environment Provider Contract
+# OKW Environment Docker Provider — Contract Compliance
 
-This repository implements the **OKW Environment Provider Contract**.
+> The authoritative contract is defined in
+> [robotframework-okw-env/docs/CONTRACT.md](http://192.168.1.130:3000/Hrabovszki1023/robotframework-okw-env).
+> This document describes how `okw-env-docker` implements it.
 
-## Contract Files (Authoritative)
-The following files define the contract and MUST be kept identical across all
-OKW environment provider implementations:
+## Provider Registration
 
-- `docs/SPECIFICATION.md`
-- `docs/KEYWORDS.md`
-- `tests/contract/contract.robot`
+```toml
+[project.entry-points."okw_env.providers"]
+docker = "okw_env_docker:DockerProvider"
+```
 
-## Rules
-1. Any change to the contract files MUST be applied identically to:
-   - robotframework-okw-env-proxmox
-   - robotframework-okw-env-docker
-2. Contract tests MUST pass (`tests/contract/contract.robot`).
-3. Breaking the contract requires an explicit, documented decision.
+## Method Implementation
 
-## Rationale
-The contract ensures:
-- provider interchangeability
-- test provider neutrality
-- deterministic behavior
-- low noise and high signal in test automation
+| Contract Method | Docker Implementation |
+|---|---|
+| `create(component)` | Generate `docker-compose.yml`, call `DockerComposeLibrary.docker_compose_up(no_start=True)` |
+| `start(component_id)` | `DockerComposeLibrary.docker_compose_start()` |
+| `is_ready(component_id)` | `DockerComposeLibrary.get_exposed_service()` — service reachable = ready |
+| `get_logs(component_id)` | `DockerComposeLibrary.docker_compose_logs()` |
+| `snapshot(component_id)` | `docker commit` per container (via subprocess — no library equivalent) |
+| `stop(component_id)` | `DockerComposeLibrary.docker_compose_stop()` |
+| `destroy(component_id)` | `DockerComposeLibrary.docker_compose_down(volumes=True)` |
 
-The contract is part of the product, not an optional guideline.
+## Underlying Library
 
-## OKW Global Tokens
+Uses [robotframework-docker](https://github.com/vogoltsov/robotframework-docker)
+(`DockerComposeLibrary`) as the engine for all Docker Compose operations.
 
-This library follows the OKW Global Token Model (defined in `okw-contract-utils`).
+## Component YAML — Docker-specific Keys
 
-Tokens:
-- `$IGNORE` (control): supported
-- `$EMPTY` (value-intent): supported
-- `$DELETE` (action-intent): not supported
+| Key | Required | Example | Purpose |
+|---|---|---|---|
+| `provider` | YES | `docker` | Selects this provider |
+| `image` | YES | `postgres` | Docker image name |
+| `version` | NO | `17` | Image tag (default: `latest`) |
+| `port` | NO | `5432` | Exposed port |
+| `env` | NO | `{POSTGRES_DB: test}` | Environment variables |
+| `healthcheck` | NO | `pg_isready -U postgres` | Health check command |
+| `timeout` | NO | `30s` | Ready-timeout |
+| `depends_on` | NO | `[PostgresDB]` | Service dependencies |
 
-Notes:
-- `${IGNORE}` / `${EMPTY}` / `${DELETE}` are Robot variables and must be defined by the user if used.
-  Recommended:
-  ```robot
-  *** Variables ***
-  ${IGNORE}    $IGNORE
-  ${EMPTY}     $EMPTY
-  ${DELETE}    $DELETE
-  ```
+## Generated docker-compose.yml
 
-Tokens are evaluated after value expansion (e.g. $MEM{...}), if applicable.
+From:
 
-Für Bibliotheken, die `$DELETE` können (GUI), setzt du „supported“.
+```yaml
+PostgresDB:
+  provider: docker
+  image: postgres
+  version: "17"
+  port: 5432
+  env:
+    POSTGRES_DB: testdb
+  healthcheck: "pg_isready -U postgres"
+```
+
+Generated:
+
+```yaml
+services:
+  PostgresDB:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: testdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+```
+
+## Snapshot
+
+Snapshot uses `docker commit` to create an image from each running
+container. The snapshot tag format is `<project>-snapshot-<container_id>`.
+
+This is the only operation that bypasses `DockerComposeLibrary`
+(no library equivalent for `docker commit`).

@@ -1,106 +1,71 @@
-# OKW Environment Provider Contract (Specification)
+# OKW Environment Docker Provider — Specification
 
-This document defines the **provider-neutral contract** implemented by:
+## Overview
 
-- robotframework-okw-env-proxmox
-- robotframework-okw-env-docker
+`robotframework-okw-env-docker` implements the OKW Environment Provider
+Contract using Docker Compose as the underlying technology.
 
-Both libraries MUST expose the same Robot Framework keyword API and semantics.
-Implementation details (Proxmox vs Docker) are explicitly out of scope.
+## Architecture
 
-## Core Concepts
+```
+okw-env (keywords, manager, registry)
+    │
+    ▼
+okw-env-docker (DockerProvider)
+    │
+    ▼
+DockerComposeLibrary (robotframework-docker)
+    │
+    ▼
+Docker Compose CLI → Docker Engine
+```
 
-### Environment
-An **Environment** is an isolated, disposable test runtime (tenant/worker scoped). It may consist of VMs (Proxmox) or containers (Docker), but MUST behave the same from the test's perspective.
+## Component Lifecycle
 
-### Tenant / Worker Isolation
-Each test execution must run in an isolated environment.
+```
+1. ENV_Start PostgresDB
+   → Component YAML loaded, merged with overrides, registered
 
-Recommended tenant id format:
+2. ENV_BuildAndRun
+   → DockerProvider.create():
+     a. Generate docker-compose.yml in temp directory
+     b. DockerComposeLibrary(file=..., project_name=okw-<uuid>)
+     c. docker_compose_up(no_start=True) → containers created
+   → DockerProvider.start():
+     d. docker_compose_start() → containers running
 
-TENANT_ID = <run_id>__<worker_id>
+3. ENV_WaitForReady PostgresDB
+   → DockerProvider.is_ready():
+     e. get_exposed_service() → port reachable = ready
+   → Polling with timeout from YAML
 
-Provider must use TENANT_ID as join key for:
-- resources (VMs/containers/networks)
-- cleanup
-- outputs
+4. ... test execution ...
 
-### Outputs
-Providers MUST publish environment outputs in a provider-neutral key space.
-Outputs MUST be retrievable via `Get Output` and listable via `List Outputs`.
+5. ENV_Stop
+   → DockerProvider.get_logs() → logs into Robot report
+   → DockerProvider.stop() → docker_compose_stop()
+   → DockerProvider.destroy() → docker_compose_down(volumes=True)
+   → Temp directory and compose file cleaned up
+```
 
-Example keys:
-- web.base_url
-- web.host
-- web.port
-- db.host
-- db.port
-- env.id
+## Isolation Model
 
-### Template Rendering
-Providers MUST support resolving `{{...}}` tokens in arbitrary strings using the current environment context.
+Each `ENV_BuildAndRun` creates a unique Docker Compose project:
 
-Token format:
-- `{{web.base_url}}`
-- `{{db.host}}`
+- Project name: `okw-<random-8-hex>`
+- Own network (Docker Compose default)
+- Own volumes
+- Own port mappings
 
-Unknown tokens MUST fail deterministically (see errors).
+Multiple tests running in parallel get separate projects with
+no shared state.
 
-## Error Handling (Deterministic)
-Providers MUST fail with clear, deterministic errors.
+## Snapshot Model
 
-Recommended error prefixes (MUST be stable strings):
-- `OKWENV:NOT_ACQUIRED` (no active environment)
-- `OKWENV:INVALID_STATE`
-- `OKWENV:UNKNOWN_OUTPUT`
-- `OKWENV:TEMPLATE_ERROR`
-- `OKWENV:PROVISIONING_FAILED`
-- `OKWENV:TIMEOUT`
+`ENV_SnapshotOnFail` and `ENV_CreateImage` use `docker commit`
+to freeze each container as a Docker image:
 
-## Lifecycle Semantics (Postcondition-first)
-
-Providers MUST be "postcondition-first":
-- Keywords assert their postcondition, perform actions until satisfied, or fail deterministically.
-
-Example:
-- `Ensure Environment Ready` MUST return only if environment is ready.
-
-## Keyword Contract (MVP)
-The following keywords MUST exist and MUST be supported:
-
-1. Acquire Environment
-2. Release Environment
-3. Get Output
-4. Render Template
-5. List Outputs
-6. Get Environment Id
-7. Ensure Environment Ready
-8. Reset Environment
-9. Describe Environment
-10. Validate Environment State
-
-## Keyword Idempotency
-- `Ensure Environment Ready` MUST be idempotent.
-- `Validate Environment State` MUST be idempotent.
-- `Describe Environment` MUST be read-only.
-- `List Outputs` MUST be read-only.
-- `Get Output` MUST be read-only.
-- `Release Environment` MUST be safe to call multiple times (second call may be a no-op).
-
-## Minimal State Model
-Provider MUST track an internal state at minimum:
-
-- not_acquired
-- acquired (provisioning in progress or done)
-- ready
-- released
-
-Transitions:
-- Acquire Environment: not_acquired -> acquired -> ready (or fail)
-- Release Environment: any -> released
-- Reset Environment: ready -> ready (re-provision/clean)
-
-## Value Expansion
-
-This library complies with the OKW Global Value Expansion Model.
-All Value and Command parameters support $MEM{KEY}.
+- Tag: `<project>-snapshot-<container_id_prefix>`
+- Images persist after container destruction
+- Can be started manually for post-mortem analysis:
+  `docker run -it <snapshot_tag> /bin/bash`

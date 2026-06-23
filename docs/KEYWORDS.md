@@ -1,143 +1,43 @@
-# Keyword Reference (OKW Env Provider)
+# Keyword Reference — OKW Environment Docker Provider
 
-This reference MUST be identical across provider implementations.
+> Keywords are defined in `okw-env` (the core library).
+> This provider implements the backend for Docker Compose.
+>
+> See [okw-env CONTRACT.md](http://192.168.1.130:3000/Hrabovszki1023/robotframework-okw-env)
+> for the full keyword contract.
 
-## Acquire Environment
-**Purpose:** Allocate and provision an isolated environment for the current run/worker.
+## Keywords
 
-**Arguments (recommended):**
-- `tenant_id` (optional; provider may derive from context)
-- `definition` (optional; YAML path/string)
-- `timeout` (optional)
+| Keyword | Arguments | Purpose |
+|---|---|---|
+| `ENV_Start` | `name`, `**overrides` | Register a Docker component from YAML |
+| `ENV_BuildAndRun` | — | Generate docker-compose.yml, create and start all containers |
+| `ENV_WaitForReady` | `name`, `timeout` (optional) | Poll until container port is reachable |
+| `ENV_Stop` | — | Log output, stop and remove all containers + volumes |
+| `ENV_CreateImage` | `name` | `docker commit` all containers for reuse |
+| `ENV_StartFromImage` | `image_name`, `fallback_keyword` | Start from snapshot or run fallback |
+| `ENV_SnapshotOnFail` | — | `docker commit` all containers on test failure |
 
-**Postcondition:**
-- environment state is `ready`
-- outputs are available
+## Usage
 
-**Errors:**
-- OKWENV:PROVISIONING_FAILED
-- OKWENV:TIMEOUT
-- OKWENV:INVALID_STATE
+```robot
+*** Settings ***
+Library    okw_env.library.OkwEnvLibrary    components_dir=components    WITH NAME    ENV
 
----
+*** Test Cases ***
+Database Is Reachable
+    ENV_Start        PostgresDB
+    ENV_BuildAndRun
+    ENV_WaitForReady    PostgresDB
+    Log    PostgresDB is ready.
+    [Teardown]    ENV_Stop
 
-## Release Environment
-**Purpose:** Tear down environment and free all resources.
-
-**Postcondition:**
-- resources are released
-- internal state is `released`
-
-**Idempotent:** yes (safe to call multiple times)
-
----
-
-## Get Output
-**Purpose:** Return a single output value by key.
-
-**Arguments:**
-- `key` (required)
-
-**Returns:**
-- string value
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-- OKWENV:UNKNOWN_OUTPUT
-
----
-
-## Render Template
-**Purpose:** Replace `{{...}}` tokens in a string using current outputs.
-
-**Arguments:**
-- `template` (required)
-
-**Returns:**
-- rendered string
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-- OKWENV:TEMPLATE_ERROR
-- OKWENV:UNKNOWN_OUTPUT
-
----
-
-## List Outputs
-**Purpose:** List all available output keys.
-
-**Returns:**
-- list of strings (keys)
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-
----
-
-## Get Environment Id
-**Purpose:** Return provider-neutral environment id (tenant id).
-
-**Returns:**
-- string id
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-
----
-
-## Ensure Environment Ready
-**Purpose:** Wait/verify that environment is ready.
-
-**Arguments (recommended):**
-- `timeout` (optional)
-
-**Postcondition:**
-- environment state is `ready`
-
-**Idempotent:** yes
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-- OKWENV:TIMEOUT
-- OKWENV:INVALID_STATE
-
----
-
-## Reset Environment
-**Purpose:** Reset environment to a clean baseline (reprovision or cleanup).
-
-**Postcondition:**
-- environment remains `ready`
-- baseline restored
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-- OKWENV:PROVISIONING_FAILED
-- OKWENV:TIMEOUT
-
----
-
-## Describe Environment
-**Purpose:** Return a human-readable description (provider-neutral fields preferred).
-
-**Returns:**
-- string (multiline allowed) OR dict-like string
-
-**Read-only:** yes
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-
----
-
-## Validate Environment State
-**Purpose:** Validate that environment matches declared model/definition.
-
-**Returns:**
-- nothing (pass/fail)
-
-**Idempotent:** yes
-
-**Errors:**
-- OKWENV:NOT_ACQUIRED
-- OKWENV:INVALID_STATE
+Snapshot On Failure
+    ENV_Start        PostgresDB
+    ENV_Start        WebShop
+    ENV_BuildAndRun
+    ENV_WaitForReady    PostgresDB
+    ENV_WaitForReady    WebShop
+    # ... test steps ...
+    [Teardown]    Run Keywords    ENV_SnapshotOnFail    ENV_Stop
+```
