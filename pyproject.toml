@@ -17,6 +17,9 @@ dependencies = [
 [project.urls]
 Repository = "http://192.168.1.130:3000/Hrabovszki1023/robotframework-okw-env-docker"
 
+[project.entry-points."okw_env.providers"]
+docker = "okw_env_docker:DockerProvider"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
