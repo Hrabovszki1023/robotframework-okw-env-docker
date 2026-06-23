@@ -99,3 +99,8 @@ Transitions:
 - Acquire Environment: not_acquired -> acquired -> ready (or fail)
 - Release Environment: any -> released
 - Reset Environment: ready -> ready (re-provision/clean)
+
+## Value Expansion
+
+This library complies with the OKW Global Value Expansion Model.
+All Value and Command parameters support $MEM{KEY}.
