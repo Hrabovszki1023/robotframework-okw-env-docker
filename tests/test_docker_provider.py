@@ -163,6 +163,38 @@ def test_unknown_container_raises(provider):
         provider.start("nonexistent")
 
 
+def test_get_runtime_info_returns_host_port(provider, mock_client, component):
+    mock_container = MagicMock()
+    mock_container.attrs = {
+        "NetworkSettings": {"Ports": {"5432/tcp": [{"HostIp": "0.0.0.0", "HostPort": "49321"}]}}
+    }
+    mock_client.containers.create.return_value = mock_container
+    cid = provider.create(component)
+
+    info = provider.get_runtime_info(cid)
+
+    assert info == {"port": 49321}
+
+
+def test_get_runtime_info_no_ports(provider, mock_client):
+    mock_container = MagicMock()
+    mock_container.attrs = {"NetworkSettings": {"Ports": {}}}
+    mock_client.containers.create.return_value = mock_container
+    cid = provider.create({"image": "redis"})
+
+    info = provider.get_runtime_info(cid)
+
+    assert info == {}
+
+
+def test_create_uses_dynamic_host_port(provider, mock_client, component):
+    mock_client.containers.create.return_value = MagicMock()
+    provider.create(component)
+
+    call_kwargs = mock_client.containers.create.call_args[1]
+    assert call_kwargs["ports"] == {"5432/tcp": None}
+
+
 def test_env_var_fallback():
     with patch("okw_env_docker.docker_provider.docker.DockerClient") as mock_cls, \
          patch.dict("os.environ", {"DOCKER_HOST": "tcp://envhost:2375"}):

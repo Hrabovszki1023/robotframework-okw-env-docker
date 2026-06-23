@@ -44,7 +44,7 @@ class DockerProvider(OkwEnvProviderBase):
 
         self._get_client().images.pull(image, tag=version)
 
-        ports = {f"{port}/tcp": port} if port else {}
+        ports = {f"{port}/tcp": None} if port else {}
         env_list = [f"{k}={v}" for k, v in env.items()]
 
         healthcheck = None
@@ -70,6 +70,16 @@ class DockerProvider(OkwEnvProviderBase):
     def start(self, component_id: str) -> None:
         container = self._require_container(component_id)
         container.start()
+
+    def get_runtime_info(self, component_id: str) -> dict:
+        """Read the actual host port assigned by Docker after start."""
+        container = self._require_container(component_id)
+        container.reload()
+        ports = container.attrs.get("NetworkSettings", {}).get("Ports", {})
+        for container_port, bindings in ports.items():
+            if bindings:
+                return {"port": int(bindings[0]["HostPort"])}
+        return {}
 
     def is_ready(self, component_id: str) -> bool:
         container = self._require_container(component_id)

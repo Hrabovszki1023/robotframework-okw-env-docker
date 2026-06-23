@@ -17,6 +17,7 @@ docker = "okw_env_docker:DockerProvider"
 |---|---|
 | `create(component)` | `client.images.pull()` + `client.containers.create()` |
 | `start(component_id)` | `container.start()` |
+| `get_runtime_info(component_id)` | Read assigned host port from container network settings |
 | `is_ready(component_id)` | `container.reload()` → check `Health.Status == "healthy"` or `Status == "running"` |
 | `get_logs(component_id)` | `container.logs()` |
 | `snapshot(component_id)` | `container.commit(repository=...)` |
@@ -64,10 +65,28 @@ Linux share the same YAML — no platform-specific configuration needed.
 | `docker_host` | YES | `tcp://192.168.1.123:2375` | Docker Engine API endpoint |
 | `image` | YES | `postgres` | Docker image name |
 | `version` | NO | `17` | Image tag (default: `latest`) |
-| `port` | NO | `5432` | Exposed port (host:container same) |
+| `port` | NO | `5432` | Container port (host port assigned dynamically) |
 | `env` | NO | `{POSTGRES_DB: test}` | Environment variables |
 | `healthcheck` | NO | `pg_isready -U postgres` | Health check command |
 | `timeout` | NO | `30s` | Ready-timeout |
+
+## Port Isolation
+
+The `port` key in the YAML defines the **container-internal** port. The
+host port is assigned **dynamically** by Docker (random free port). After
+`start()`, `get_runtime_info()` reads the actual host port and overwrites
+the `port` value in the component config.
+
+This enables parallel test execution on the same Docker host without
+port conflicts:
+
+```
+Test A: PostgresDB.port → 49321  (container-internal: 5432)
+Test B: PostgresDB.port → 49322  (container-internal: 5432)
+```
+
+The test uses `${PostgresDB.port}` and always gets the correct host port —
+no hardcoded values, no conflicts.
 
 ## Health Check Logic
 
