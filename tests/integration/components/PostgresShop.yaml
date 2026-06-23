@@ -1,0 +1,6 @@
+PostgresShop:
+  extends: PostgresBase
+  port: 5433
+  env:
+    POSTGRES_DB: shop
+    POSTGRES_PASSWORD: shop_test

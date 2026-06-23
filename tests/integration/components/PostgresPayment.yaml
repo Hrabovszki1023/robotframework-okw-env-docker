@@ -1,0 +1,6 @@
+PostgresPayment:
+  extends: PostgresBase
+  port: 5434
+  env:
+    POSTGRES_DB: payment
+    POSTGRES_PASSWORD: payment_test

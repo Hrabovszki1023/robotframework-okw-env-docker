@@ -1,0 +1,7 @@
+PostgresBase:
+  provider: docker
+  docker_host: tcp://192.168.1.123:2375
+  image: postgres
+  version: "16"
+  healthcheck: "pg_isready -U postgres"
+  timeout: 30s
