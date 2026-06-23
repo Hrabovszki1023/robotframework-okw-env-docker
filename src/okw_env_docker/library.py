@@ -82,11 +82,45 @@ class OkwEnvDockerLibrary(OkwEnvLibrary):
     | healthcheck: "pg_isready -U postgres" |
     | timeout: 30s |
 
+    = Environment Variables via $MEM{} =
+
+    After ``ENV_BuildAndRun``, **all YAML keys** are published as Robot
+    Framework test variables using dot-notation. This bridges environment
+    provisioning with test keywords — the test knows where to connect
+    without hardcoding anything.
+
+    | *Variable* | *Source* | *Example value* |
+    | ``${PostgresDB.image}`` | YAML key | ``postgres`` |
+    | ``${PostgresDB.version}`` | YAML key | ``17`` |
+    | ``${PostgresDB.port}`` | YAML key | ``5432`` |
+    | ``${PostgresDB.env.POSTGRES_DB}`` | YAML nested key | ``testdb`` |
+    | ``${PostgresDB.env.POSTGRES_PASSWORD}`` | YAML nested key | ``secret`` |
+    | ``${PostgresDB.docker_host}`` | YAML key | ``tcp://192.168.1.123:2375`` |
+    | ``${PostgresDB.ID}`` | Runtime (container ID) | ``okw-3df2dcc8`` |
+
+    Usage in test:
+
+    | ENV_Start       | PostgresDB |
+    | ENV_BuildAndRun |            |
+    | ENV_WaitForReady | PostgresDB |
+    | Log | DB name: ${PostgresDB.env.POSTGRES_DB} |
+    | Log | Port: ${PostgresDB.port} |
+
+    In OKW GUI/API keywords, use ``$MEM{}`` syntax:
+
+    | SetValue | DB_Host | $MEM{PostgresDB.docker_host} |
+    | SetValue | DB_Name | $MEM{PostgresDB.env.POSTGRES_DB} |
+
+    *Design rationale:* The connection data lives in the YAML — not in
+    environment variables, not in CI config, not hardcoded in the test.
+    The same test runs against any Docker host by changing one YAML file.
+
     = Signal vs. NOISE =
 
     | *Signal* | *NOISE (hidden)* |
     | ``ENV_Start PostgresDB`` | Docker API calls, image pull, container config |
     | ``ENV_WaitForReady PostgresDB`` | Health check polling, timeout logic |
+    | ``${PostgresDB.env.POSTGRES_DB}`` | YAML parsing, variable publishing |
     | ``ENV_Stop`` | Container stop, remove, volume cleanup |
 
     The test case reads like a specification. The infrastructure is invisible.
