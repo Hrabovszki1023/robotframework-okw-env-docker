@@ -27,27 +27,36 @@ class OkwEnvDockerLibrary(OkwEnvLibrary):
 
     = Connection =
 
-    The library connects to a Docker Engine via REST API.
-    Configure the host in one of three ways (in priority order):
+    The Docker host is configured **per component in the YAML file** via
+    the ``docker_host`` key. This is intentional: the connection target is
+    a property of the test environment, not of the test machine. A test
+    suite can mix components on different Docker hosts — or even different
+    providers (Docker + Proxmox) — without any local configuration.
 
-    | 1. | Constructor parameter ``docker_host`` |
-    | 2. | Environment variable ``DOCKER_HOST`` |
-    | 3. | Default: ``unix:///var/run/docker.sock`` |
+    Resolution order for ``docker_host``:
 
-    Example for a remote Docker host on Proxmox:
+    | 1. | ``docker_host`` key in component YAML (recommended) |
+    | 2. | ``docker_host`` parameter on the Library constructor (fallback) |
+    | 3. | Environment variable ``DOCKER_HOST`` |
+    | 4. | Default: ``unix:///var/run/docker.sock`` (Linux only) |
 
-    | ``docker_host=tcp://192.168.1.123:2375`` |
+    *Why YAML and not a Library parameter?*
+
+    The test machine (Windows laptop, Linux CI runner) should not determine
+    where Docker runs. A developer on Windows and a CI runner on Linux use
+    the same YAML — the connection target stays the same. No ``DOCKER_HOST``
+    environment variable, no platform-specific config, no surprises.
 
     = Installation =
 
     | ``pip install robotframework-okw-env-docker`` |
 
-    That's it. One ``pip install``, one IP address, test environments ready.
+    That's it. One ``pip install``, one IP address in the YAML, test environments ready.
 
     = Usage =
 
     | **Settings** |
-    | Library | OkwEnvDockerLibrary | components_dir=components | docker_host=tcp://192.168.1.123:2375 |
+    | Library | OkwEnvDockerLibrary | components_dir=components |
 
     | **Test Cases** |
     | Webshop mit Datenbank |
@@ -59,10 +68,12 @@ class OkwEnvDockerLibrary(OkwEnvLibrary):
 
     = Component YAML =
 
-    Each environment component is defined in a YAML file:
+    Each environment component is defined in a YAML file.
+    The ``docker_host`` tells the provider where to connect:
 
     | ``PostgresDB.yaml`` |
     | provider: docker |
+    | docker_host: tcp://192.168.1.123:2375 |
     | image: postgres |
     | version: "17" |
     | port: 5432 |

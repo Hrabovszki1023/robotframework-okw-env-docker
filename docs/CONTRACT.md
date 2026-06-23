@@ -31,20 +31,37 @@ API via REST. No local Docker CLI installation required.
 
 ### Connection
 
-The `DockerProvider` constructor accepts an optional `base_url` parameter.
+The Docker host is configured **per component in the YAML file** via the
+`docker_host` key. This keeps the connection target with the component
+definition — not in environment variables or CI config.
+
 Resolution order:
 
-1. Explicit `base_url` argument
-2. `DOCKER_HOST` environment variable
-3. Default: `unix:///var/run/docker.sock`
+1. `docker_host` key in component YAML (recommended)
+2. Explicit `base_url` argument to `DockerProvider` constructor
+3. `DOCKER_HOST` environment variable
+4. Default: `unix:///var/run/docker.sock` (Linux only)
 
-Example for remote Docker host: `tcp://192.168.1.123:2375`
+Example YAML:
+
+```yaml
+PostgresDB:
+  provider: docker
+  docker_host: tcp://192.168.1.123:2375
+  image: postgres
+  version: "17"
+```
+
+**Design rationale:** The test machine (Windows, Linux, macOS) should not
+determine where Docker runs. A developer on Windows and a CI runner on
+Linux share the same YAML — no platform-specific configuration needed.
 
 ## Component YAML — Docker-specific Keys
 
 | Key | Required | Example | Purpose |
 |---|---|---|---|
 | `provider` | YES | `docker` | Selects this provider |
+| `docker_host` | YES | `tcp://192.168.1.123:2375` | Docker Engine API endpoint |
 | `image` | YES | `postgres` | Docker image name |
 | `version` | NO | `17` | Image tag (default: `latest`) |
 | `port` | NO | `5432` | Exposed port (host:container same) |

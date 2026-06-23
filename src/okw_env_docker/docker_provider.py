@@ -17,8 +17,13 @@ from okw_env.provider_base import OkwEnvProviderBase
 class DockerProvider(OkwEnvProviderBase):
     """Provisions environment components as Docker containers via the Engine API."""
 
-    def __init__(self, base_url: str | None = None):
-        self._base_url = base_url or os.environ.get("DOCKER_HOST", "unix:///var/run/docker.sock")
+    def __init__(self, base_url: str | None = None, component: dict | None = None):
+        component = component or {}
+        self._base_url = (
+            base_url
+            or component.get("docker_host")
+            or os.environ.get("DOCKER_HOST", "unix:///var/run/docker.sock")
+        )
         self._client: docker.DockerClient | None = None
         self._containers: dict[str, docker.models.containers.Container] = {}
 
