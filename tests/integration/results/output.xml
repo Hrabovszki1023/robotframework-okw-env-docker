@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.4.2 (Python 3.11.7 on win32)" generated="2026-06-23T17:59:30.051746" rpa="false" schemaversion="5">
+<suite id="s1" name="Redis Lifecycle" source="D:\work\okw\robotframework\robotframework-okw-env-docker\tests\integration\redis_lifecycle.robot">
+<test id="s1-t1" name="Redis Container Lifecycle" line="9">
+<kw name="ENV_Start" owner="okw_env_docker.library.OkwEnvDockerLibrary">
+<msg time="2026-06-23T17:59:30.362737" level="INFO">ENV_Start: Registered 'Redis'</msg>
+<arg>Redis</arg>
+<doc>Register an environment component for provisioning.</doc>
+<status status="PASS" start="2026-06-23T17:59:30.361727" elapsed="0.001010"/>
+</kw>
+<kw name="ENV_BuildAndRun" owner="okw_env_docker.library.OkwEnvDockerLibrary">
+<msg time="2026-06-23T17:59:31.761324" level="INFO">ENV_BuildAndRun: All components started.</msg>
+<doc>Create and start all registered environment components.</doc>
+<status status="PASS" start="2026-06-23T17:59:30.362737" elapsed="1.398587"/>
+</kw>
+<kw name="ENV_WaitForReady" owner="okw_env_docker.library.OkwEnvDockerLibrary">
+<msg time="2026-06-23T17:59:37.779384" level="INFO">ENV_WaitForReady: 'Redis' is ready.</msg>
+<arg>Redis</arg>
+<doc>Wait until a component passes its health check.</doc>
+<status status="PASS" start="2026-06-23T17:59:31.761324" elapsed="6.018060"/>
+</kw>
+<kw name="Log" owner="BuiltIn">
+<msg time="2026-06-23T17:59:37.779384" level="INFO">Redis ist bereit — 30s Pause für Portainer-Beobachtung.</msg>
+<arg>Redis ist bereit — 30s Pause für Portainer-Beobachtung.</arg>
+<doc>Logs the given message with the given level.</doc>
+<status status="PASS" start="2026-06-23T17:59:37.779384" elapsed="0.000000"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-06-23T18:00:07.780790" level="INFO">Slept 30 seconds.</msg>
+<msg time="2026-06-23T18:00:07.780790" level="INFO">Portainer: Container sollte jetzt sichtbar sein.</msg>
+<arg>30s</arg>
+<arg>Portainer: Container sollte jetzt sichtbar sein.</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-06-23T17:59:37.780435" elapsed="30.000355"/>
+</kw>
+<kw name="ENV_Stop" owner="okw_env_docker.library.OkwEnvDockerLibrary">
+<msg time="2026-06-23T18:00:07.808161" level="INFO">--- Logs: Redis ---
+1:C 23 Jun 2026 15:59:31.752 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+1:C 23 Jun 2026 15:59:31.752 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1:C 23 Jun 2026 15:59:31.752 * Redis version=7.4.9, bits=64, commit=00000000, modified=0, pid=1, just started
+1:C 23 Jun 2026 15:59:31.752 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+1:M 23 Jun 2026 15:59:31.752 * monotonic clock: POSIX clock_gettime
+1:M 23 Jun 2026 15:59:31.753 * Running mode=standalone, port=6379.
+1:M 23 Jun 2026 15:59:31.753 * Server initialized
+1:M 23 Jun 2026 15:59:31.753 * Ready to accept connections tcp
+</msg>
+<msg time="2026-06-23T18:00:08.030861" level="INFO">ENV_Stop: All components stopped and destroyed.</msg>
+<doc>Stop and destroy all environment components.</doc>
+<status status="PASS" start="2026-06-23T18:00:07.780790" elapsed="0.250071"/>
+</kw>
+<kw name="Run Keywords" owner="BuiltIn" type="TEARDOWN">
+<kw name="ENV_SnapshotOnFail" owner="okw_env_docker.library.OkwEnvDockerLibrary">
+<msg time="2026-06-23T18:00:08.031873" level="INFO">ENV_SnapshotOnFail: Test passed, no snapshot needed.</msg>
+<doc>Snapshot all components if the current test has failed.</doc>
+<status status="PASS" start="2026-06-23T18:00:08.030861" elapsed="0.001012"/>
+</kw>
+<kw name="ENV_Stop" owner="okw_env_docker.library.OkwEnvDockerLibrary">
+<msg time="2026-06-23T18:00:08.031873" level="INFO">ENV_Stop: All components stopped and destroyed.</msg>
+<doc>Stop and destroy all environment components.</doc>
+<status status="PASS" start="2026-06-23T18:00:08.031873" elapsed="0.000000"/>
+</kw>
+<arg>ENV_SnapshotOnFail</arg>
+<arg>ENV_Stop</arg>
+<doc>Executes all the given keywords in a sequence.</doc>
+<status status="PASS" start="2026-06-23T18:00:08.030861" elapsed="0.001012"/>
+</kw>
+<doc>Startet einen Redis-Container, wartet auf Ready, stoppt und räumt auf.</doc>
+<status status="PASS" start="2026-06-23T17:59:30.360456" elapsed="37.671417"/>
+</test>
+<doc>Integrationstest: Redis-Container Lifecycle über Docker Engine API.</doc>
+<status status="PASS" start="2026-06-23T17:59:30.052780" elapsed="37.979093"/>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="Redis Lifecycle" id="s1" pass="1" fail="0" skip="0">Redis Lifecycle</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>

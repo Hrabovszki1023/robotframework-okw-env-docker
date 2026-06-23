@@ -15,18 +15,30 @@ docker = "okw_env_docker:DockerProvider"
 
 | Contract Method | Docker Implementation |
 |---|---|
-| `create(component)` | Generate `docker-compose.yml`, call `DockerComposeLibrary.docker_compose_up(no_start=True)` |
-| `start(component_id)` | `DockerComposeLibrary.docker_compose_start()` |
-| `is_ready(component_id)` | `DockerComposeLibrary.get_exposed_service()` — service reachable = ready |
-| `get_logs(component_id)` | `DockerComposeLibrary.docker_compose_logs()` |
-| `snapshot(component_id)` | `docker commit` per container (via subprocess — no library equivalent) |
-| `stop(component_id)` | `DockerComposeLibrary.docker_compose_stop()` |
-| `destroy(component_id)` | `DockerComposeLibrary.docker_compose_down(volumes=True)` |
+| `create(component)` | `client.images.pull()` + `client.containers.create()` |
+| `start(component_id)` | `container.start()` |
+| `is_ready(component_id)` | `container.reload()` → check `Health.Status == "healthy"` or `Status == "running"` |
+| `get_logs(component_id)` | `container.logs()` |
+| `snapshot(component_id)` | `container.commit(repository=...)` |
+| `stop(component_id)` | `container.stop(timeout=10)` |
+| `destroy(component_id)` | `container.remove(v=True, force=True)` |
 
 ## Underlying Library
 
-Uses [robotframework-docker](https://github.com/vogoltsov/robotframework-docker)
-(`DockerComposeLibrary`) as the engine for all Docker Compose operations.
+Uses the [Docker SDK for Python](https://docker-py.readthedocs.io/)
+(`docker.DockerClient`) to communicate directly with the Docker Engine
+API via REST. No local Docker CLI installation required.
+
+### Connection
+
+The `DockerProvider` constructor accepts an optional `base_url` parameter.
+Resolution order:
+
+1. Explicit `base_url` argument
+2. `DOCKER_HOST` environment variable
+3. Default: `unix:///var/run/docker.sock`
+
+Example for remote Docker host: `tcp://192.168.1.123:2375`
 
 ## Component YAML — Docker-specific Keys
 
@@ -35,48 +47,20 @@ Uses [robotframework-docker](https://github.com/vogoltsov/robotframework-docker)
 | `provider` | YES | `docker` | Selects this provider |
 | `image` | YES | `postgres` | Docker image name |
 | `version` | NO | `17` | Image tag (default: `latest`) |
-| `port` | NO | `5432` | Exposed port |
+| `port` | NO | `5432` | Exposed port (host:container same) |
 | `env` | NO | `{POSTGRES_DB: test}` | Environment variables |
 | `healthcheck` | NO | `pg_isready -U postgres` | Health check command |
 | `timeout` | NO | `30s` | Ready-timeout |
-| `depends_on` | NO | `[PostgresDB]` | Service dependencies |
 
-## Generated docker-compose.yml
+## Health Check Logic
 
-From:
+If the component YAML defines a `healthcheck`, the provider configures
+a Docker health check on the container. `is_ready()` then checks:
 
-```yaml
-PostgresDB:
-  provider: docker
-  image: postgres
-  version: "17"
-  port: 5432
-  env:
-    POSTGRES_DB: testdb
-  healthcheck: "pg_isready -U postgres"
-```
-
-Generated:
-
-```yaml
-services:
-  PostgresDB:
-    image: postgres:17
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: testdb
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-```
+1. If `Health` is present in container state → `healthy` = ready
+2. Otherwise → `running` = ready
 
 ## Snapshot
 
-Snapshot uses `docker commit` to create an image from each running
-container. The snapshot tag format is `<project>-snapshot-<container_id>`.
-
-This is the only operation that bypasses `DockerComposeLibrary`
-(no library equivalent for `docker commit`).
+`container.commit()` creates a Docker image from the running container.
+The snapshot tag format is `<component_id>-snapshot`.

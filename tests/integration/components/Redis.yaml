@@ -1,0 +1,6 @@
+Redis:
+  image: redis
+  version: "7"
+  port: 6379
+  healthcheck: "redis-cli ping"
+  timeout: 30s
