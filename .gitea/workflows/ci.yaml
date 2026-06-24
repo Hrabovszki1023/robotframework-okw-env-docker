@@ -10,10 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install okw-env from source
+        run: |
+          git clone http://gitea.local:3000/Hrabovszki1023/robotframework-okw-env.git /tmp/okw-env
+
       - name: Install dependencies
         run: |
           python3 -m venv venv
           . venv/bin/activate
+          pip install -e /tmp/okw-env
           pip install -e .
 
       - name: Run contract test
