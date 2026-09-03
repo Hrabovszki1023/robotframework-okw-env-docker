@@ -44,7 +44,8 @@ class DockerProvider(OkwEnvProviderBase):
 
         self._get_client().images.pull(image, tag=version)
 
-        ports = {f"{port}/tcp": None} if port else {}
+        host_port = component.get("host_port")
+        ports = {f"{port}/tcp": int(host_port) if host_port else None} if port else {}
         env_list = [f"{k}={v}" for k, v in env.items()]
 
         healthcheck = None
