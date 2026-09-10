@@ -7,7 +7,21 @@ name = "robotframework-okw-env-docker"
 version = "0.1.1"
 description = "Robot Framework library providing OKW environment provisioning with Docker."
 readme = "README.md"
+license = "AGPL-3.0-only"
 requires-python = ">=3.10"
+authors = [
+    {name = "Zoltan Hrabovszki", email = "hrabovszki@googlemail.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Robot Framework",
+    "Framework :: Robot Framework :: Library",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Testing",
+]
+keywords = ["robotframework", "docker", "testing", "okw", "environment"]
 dependencies = [
   "robotframework>=6.0",
   "robotframework-okw-env>=0.1.0",
@@ -16,7 +30,9 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "http://192.168.1.130:3000/Hrabovszki1023/robotframework-okw-env-docker"
+Homepage = "https://github.com/Hrabovszki1023/robotframework-okw-env-docker"
+Repository = "https://github.com/Hrabovszki1023/robotframework-okw-env-docker"
+Documentation = "https://hrabovszki1023.github.io/robotframework-okw-env-docker/"
 
 [project.entry-points."okw_env.providers"]
 docker = "okw_env_docker:DockerProvider"
