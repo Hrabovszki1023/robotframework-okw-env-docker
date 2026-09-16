@@ -1,6 +1,10 @@
 # robotframework-okw-env-docker
 
-Docker Compose provider for [okw-env](http://192.168.1.130:3000/Hrabovszki1023/robotframework-okw-env).
+[![PyPI](https://img.shields.io/pypi/v/robotframework-okw-env-docker)](https://pypi.org/project/robotframework-okw-env-docker/)
+[![Python](https://img.shields.io/pypi/pyversions/robotframework-okw-env-docker)](https://pypi.org/project/robotframework-okw-env-docker/)
+[![License](https://img.shields.io/badge/License-OKW_Community-orange.svg)](LICENSE)
+
+Docker Compose provider for [okw-env](https://github.com/Hrabovszki1023/robotframework-okw-env).
 
 > Deutsche Version: [README_de.md](README_de.md)
 
