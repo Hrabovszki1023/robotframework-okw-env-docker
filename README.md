@@ -6,7 +6,7 @@
 
 Docker Compose provider for [okw-env](https://github.com/Hrabovszki1023/robotframework-okw-env).
 
-> Deutsche Version: [README_de.md](README_de.md)
+> Deutsche Version: [README.de.md](README.de.md)
 
 ## What
 
