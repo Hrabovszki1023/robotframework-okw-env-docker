@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/robotframework-okw-env-docker)](https://pypi.org/project/robotframework-okw-env-docker/)
 [![Python](https://img.shields.io/pypi/pyversions/robotframework-okw-env-docker)](https://pypi.org/project/robotframework-okw-env-docker/)
-[![License](https://img.shields.io/badge/License-OKW_Community-orange.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Docker Compose provider for [okw-env](https://github.com/Hrabovszki1023/robotframework-okw-env).
 
